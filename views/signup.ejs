@@ -1,0 +1,75 @@
+<%- include('./inc/header.ejs') %>
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card mt-4 border-0" style="background: #1d1d1d;">
+            <div class="card-body">
+                <h5 class="card-title text-light">Sign Up For Free</h5>
+                <hr />
+                <form method="POST" action="/users/signup">
+                    <div class="row mb-2">
+                        <div class="col">
+                            <input type="text" id="firstname" name="firstname" class="form-control" placeholder="First Name">
+                        </div>
+                        <div class="col pl-0">
+                            <input type="text" id="lastname" name="lastname" class="form-control" placeholder="Last Name">
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col">
+                            <input type="text" id="username" name="username" class="form-control" placeholder="Desired Username">
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col">
+                            <input type="email" id="email" name="email" class="form-control" placeholder="Email Address">
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col">
+                            <input type="password" id="password" name="password" class="form-control" placeholder="Create Password">
+                        </div>
+                        <div class="col pl-0">
+                            <input type="password" id="password2" name="password2" class="form-control" placeholder="Re-enter Password">
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col">
+                            <select id="gender" name="gender" class="form-control">
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Prefer Not To Say">Prefer Not To Say</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col">
+                            <select id="country" name="country" class="form-control">
+                                <option value="">Select Country</option>
+                                <%- include('./inc/country_list.ejs') %>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col">
+                            <label for="birthday" class="text-light">Birthday</label>
+                            <input type="date" id="birthday" name="birthday" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col">
+                            <button type="submit" class="btn btn-block btn-success">Create Account</button>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col">
+                            <small class="text-light">By clicking "Create Account" you agree to our <a href="#">Terms Of Use</a> and our <a href="#">Data Policy</a>.</small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6"></div>
+</div>
+<%- include('./inc/footer.ejs') %>

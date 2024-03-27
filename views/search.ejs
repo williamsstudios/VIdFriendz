@@ -1,0 +1,26 @@
+<%- include('./inc/header.ejs') %>
+<div class="row">
+    <div class="col-lg-8">
+        <div class="row mt-3">
+            <div class="col-lg-12">
+                <form method="POST" action="/users/search">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="Search" aria-label="Search" id="query" name="query" aria-describedby="button-addon2">
+                        <div class="input-group-append">
+                            <button class="btn" id="searchBtn" name="searchBtn" type="submit" id="button-addon2"><i class="fa-solid fa-magnifying-glass"></i></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12">
+                <h6 style="color: #fff72e;">Search Results</h6>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+
+    </div>
+</div>
+<%- include('./inc/footer.ejs') %>
