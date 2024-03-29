@@ -25,6 +25,9 @@ const VideoSchema = new mongoose.Schema({
     },
     views: {
         type: [String]
+    },
+    thumbnail: {
+        type: String
     }
 });
 

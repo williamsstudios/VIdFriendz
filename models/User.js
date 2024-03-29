@@ -34,6 +34,9 @@ const UserSchema = new mongoose.Schema({
     bio: {
         type: String
     },
+    coverPic: {
+        type: String
+    },
     join_date: {
         type: Date,
         default: Date.now()

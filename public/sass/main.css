@@ -53,6 +53,16 @@ a.navbar-brand {
   border: none;
 }
 
+.btn-outline-primary {
+  border: 1px #fff72e solid;
+  color: #fff72e;
+}
+
+.btn-primary:hover {
+  border: 1px #fff72e solid;
+  color: #fff72e;
+}
+
 .container {
   max-width: 900px;
 }

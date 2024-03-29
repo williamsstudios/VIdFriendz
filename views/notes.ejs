@@ -1,0 +1,47 @@
+<%- include('./inc/header.ejs') %>
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card text-light mt-4" style="background: none; border: none;">
+            <h5 class="card-title text-light">Notifications</h5>
+            <hr />
+            <% for(var n = 0; n<notes.length; n++) { %>
+                <div class="row mb-2">
+                    <div class="col-lg-2">
+                        <% if(notes[n].notes.avatar) { %>
+                            <a href="/users/<%- notes[n].user2 %>">
+                                <img src="/uploads/<%- notes[n].user2 %>/<%- notes[n].notes.avatar %>" width="40" height="40" class="rounded-circle">
+                            </a>
+                        <% } else { %>
+                            <a href="/users/<%- notes[n].user2 %>">
+                                <img src="/img/no_pic.jpg" width="40" height="40" class="rounded-circle">
+                            </a>
+                        <% } %>
+                    </div>
+                    <div class="col-lg-10">
+                        <div class="row mb-2">
+                            <div class="col-lg-12">
+                                <p class="m-0 text-light">
+                                    <a href="/users/<%- notes[n].user2 %>">
+                                        <%- notes[n].notes.firstname %> <%- notes[n].notes.lastname %>
+                                    </a>
+                                    <%- notes[n].note %>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <form method="POST" action="/users/notes/markAsRead/<%- notes[n]._id %>">
+                                    <button class="btn btn-primary btn-md mr-2" type="submit">Mark As Read</button>
+                                </form>
+                                <form method="POST" action="/users/notes/delete/<%- notes[n]._id %>">
+                                    <button class="btn btn-danger btn-md" type="submit">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+<%- include('./inc/footer.ejs') %>

@@ -11,8 +11,8 @@ const { forwardAuthenticated, ensureAuthenticated } = require('../config/auth');
 const User = require('../models/User');
 const Video = require('../models/Video');
 const History = require('../models/History');
-const Playlist = require('../models/Playlist');
 const Comment = require('../models/Comment');
+const Note = require('../models/Note');
 
 // Time Ago Function
 function timeAgo(date) {
@@ -78,11 +78,18 @@ const upload = multer({
 });
 
 // Upload Video Page
-router.get('/upload', ensureAuthenticated, (req, res) => {  
-    res.render('upload', {
-        title: 'Upload A Video',
-        logUser: req.user
-    })
+router.get('/upload', ensureAuthenticated, (req, res) => {
+    Note.findOne({ $and: [{ user2: req.user.username }, { did_read: false }] }, (err, newNotes) => {
+        if(err) {
+            console.log(err);
+        } else {
+            res.render('upload', {
+                title: 'Upload A Video',
+                logUser: req.user,
+                newNotes: newNotes
+            })
+        }
+    });
 });
 
 // Video Upload Function
@@ -100,6 +107,37 @@ router.post('/upload', upload.single('file'), (req, res) => {
         .catch(err => console.log(err));
 });
 
+// Upload Video Thumbnail
+router.post('/thumbnail/:id', upload.single('thumbnail'), (req, res) => {
+    const file = req.file;
+    
+    if(!file) {
+        req.flash(
+            'error_msg',
+            'Please select a thumbnail'
+        )
+    } else {
+        let updateThumb = {
+            thumbnail: req.file.filename
+        };
+
+        let query = { filename: req.params.id };
+
+        Video.findOneAndUpdate(query, updateThumb, (err) => {
+            if(err) {
+                console.log(err);
+            } else {
+                req.flash(
+                    'success_msg',
+                    'Video Updated'
+                )
+                res.redirect(req.get('referer'));
+            }
+        });
+    }
+});
+
+// Edit Video Function
 router.post('/edit/:file', (req, res) => {
     const title = req.body.title;
     const description = req.body.description;
@@ -117,11 +155,31 @@ router.post('/edit/:file', (req, res) => {
         if(err) {
             console.log(err);
         } else {
-            req.flash(
-                'success_msg',
-                'Video Updated'
-            )
-            res.redirect('/');
+            User.find({ username: req.user.username }, (err, subscribers) => {
+                if(err) {
+                    console.log(err);
+                } else {
+                    subscribers.forEach(subscriber => {
+                        let newNote = new Note({
+                            user1: req.user.username,
+                            user2: subscriber.username,
+                            app: "New Video Upload",
+                            note: "added a new video"
+                        });
+
+                        newNote
+                            .save()
+                            .then(subscribers => {
+                                req.flash(
+                                    'success_msg',
+                                    'Video Updated'
+                                )
+                                res.redirect('/');
+                            })
+                            .catch(err => console.log(err));
+                    })
+                }
+            });
         }
     });
 });
@@ -148,24 +206,24 @@ router.get('/watch/:id', ensureAuthenticated, (req, res) => {
                 if(err) {
                     console.log(err);
                 } else {
-                    Playlist.find({ user: req.user.username }, (err, playlists) => {
-                        if(err) {
-                            console.log(err);
-                        } else {
-                            Comment.aggregate([
-                                { $match: { video_id: req.params.id } },
-                                {
-                                    $lookup: {
-                                        from: "users",
-                                        localField: "user1",
-                                        foreignField: "username",
-                                        as: "comments"
-                                    }
-                                },
-                                {
-                                    $unwind: "$comments"
-                                }
-                            ]).then(comments => {
+                    Comment.aggregate([
+                        { $match: { video_id: req.params.id } },
+                        {
+                            $lookup: {
+                                from: "users",
+                                localField: "user1",
+                                foreignField: "username",
+                                as: "comments"
+                            }
+                        },
+                        {
+                            $unwind: "$comments"
+                        }
+                    ]).then(comments => {
+                        Note.findOne({ $and: [{ user2: req.user.username }, { did_read: false }] }, (err, newNotes) => {
+                            if(err) {
+                                console.log(err);
+                            } else {
                                 History.findOne({ $and: [{ video_id: req.params.id }, { user: req.user.username }] }, (err, history) => {
                                     if(err) {
                                         console.log(err);
@@ -178,7 +236,8 @@ router.get('/watch/:id', ensureAuthenticated, (req, res) => {
                                             timeAgo: timeAgo(video.upload_date),
                                             playlists: playlists,
                                             comments: comments,
-                                            c_timeAgo: timeAgo(comments.date_made)
+                                            c_timeAgo: timeAgo(comments.date_made),
+                                            newNotes: newNotes
                                         });
                                     } else {
                                         Video.findOneAndUpdate({ _id: req.params.id }, { $push: { views: req.user.username } }).exec();
@@ -186,7 +245,7 @@ router.get('/watch/:id', ensureAuthenticated, (req, res) => {
                                             video_id: req.params.id,
                                             user: req.user.username
                                         });
-                                        
+                                                
                                         newHistory
                                             .save()
                                             .then(history => {
@@ -198,74 +257,20 @@ router.get('/watch/:id', ensureAuthenticated, (req, res) => {
                                                     timeAgo: timeAgo(video.upload_date),
                                                     playlists: playlists,
                                                     comments: comments,
-                                                    c_timeAgo: timeAgo(comments.date_made)
+                                                    c_timeAgo: timeAgo(comments.date_made),
+                                                    newNotes: newNotes
                                                 });
                                             })
                                             .catch(err => console.log(err));
                                     }
                                 });
-                            }).catch(err => console.log(err));
-                        }
-                    })
+                            }
+                        });
+                    }).catch(err => console.log(err));
                 }
-            });
-        }
-    });
-});
-
-// Add To Playlist Function
-router.post('/addToPlaylist/:video/:playlist', (req, res) => {
-    Playlist.findOne({ $and: [{ title: req.params.playlist }, { user: req.user.username }] }, (err, playlist) => {
-        if(err) {
-            console.log(err);
-        } else if(playlist.videos == req.params.video) {
-            req.flash(
-                'error_msg',
-                'This video is already on this playlist'
-            );
-            res.redirect(req.get('referer'));
-        } else {
-            Playlist.findOneAndUpdate({ $and: [{ title: req.params.playlist }, { user: req.user.username }] }, { $push: { videos: req.params.video } }).exec();
-            req.flash(
-                'success_msg',
-                'Video added to the playlist'
-            );
-            res.redirect(req.get('referer'));
-        }
-    });
-});
-
-// Create A New Playlist
-router.post('/newPlaylist/:video', (req, res) => {
-    const title = req.body.title;
-    const user = req.user.username;
-    const privacy = req.body.privacy;
-
-    if(!title) {
-        req.flash(
-            'error_msg',
-            'Please enter a title'
-        );
-        res.redirect(req.get('referer'));
-    } else {
-        let newPlaylist = new Playlist({
-            title: title,
-            user: user,
-            privacy: privacy
-        });
-
-        newPlaylist
-            .save()
-            .then(playlist => {
-                Video.findOneAndUpdate({ title: title }, { $push: { videos: req.params.video } }).exec();
-                req.flash(
-                    'success_msg',
-                    'Playlist created and video added'
-                );
-                res.redirect(req.get('referer'));
             })
-            .catch(err => console.log(err));
-    }
+        }
+    });
 });
 
 // Comment On Video Function
@@ -295,13 +300,45 @@ router.post('/comment/:id', (req, res) => {
                 newComment
                     .save()
                     .then(comment => {
-                        res.redirect(req.get('referer'));
+                        User.find({ username: req.user.username }, (err, subscribers) => {
+                            if(err) {
+                                console.log(err);
+                            } else {
+                                subscribers.forEach(subscriber => {
+                                    let newNote = new Note({
+                                        user1: req.user.username,
+                                        user2: subscriber.username,
+                                        app: "New Video Upload",
+                                        note: "added a new video"
+                                    });
+            
+                                    newNote
+                                        .save()
+                                        .then(subscribers => {
+                                            res.redirect(req.get('referer'));
+                                        })
+                                        .catch(err => console.log(err));
+                                });
+                            }
+                        });
                     })
                     .catch(err => console.log(err));
             }
         };
     });
 
+});
+
+// Like Comment Function
+router.post('/comment/like/:id', (req, res) => {
+    Comment.findOneAndUpdate({ _id: req.params.id }, { $push: { likes: req.user.username } }).exec();
+    res.redirect(req.get('referer'));
+});
+
+// Unlike Comment Function
+router.post('/comment/unlike/:id', (req, res) => {
+    Comment.findOneAndUpdate({ _id: req.params.id }, { $pull: { likes: req.user.username } }).exec();
+    res.redirect(req.get('referer'));
 });
 
 module.exports = router;

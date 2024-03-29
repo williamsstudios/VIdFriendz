@@ -54,6 +54,14 @@ a.navbar-brand {
     color: $color-1;
     border: none;
 }
+.btn-outline-primary {
+    border: 1px $color-2 solid;
+    color: $color-2;
+}
+.btn-primary:hover {
+    border: 1px $color-2 solid;
+    color: $color-2;
+}
 
 .container {
     max-width: 900px;

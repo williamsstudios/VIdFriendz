@@ -11,13 +11,78 @@ const { forwardAuthenticated, ensureAuthenticated } = require('../config/auth');
 const User = require('../models/User');
 const Video = require('../models/Video');
 const History = require('../models/History');
-const Playlist = require('../models/Playlist');
+const Note = require('../models/Note');
+
+// Multer Config
+var storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, './public/uploads/' + req.user.username)
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname))
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 1181116006 }
+});
+
+// Time Ago Function
+function timeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+
+    const interval = Math.floor(seconds / 31536000);
+
+    if (interval > 1) {
+        return interval + " years ago";
+    }
+    if (interval === 1) {
+        return interval + " year ago";
+    }
+
+    const months = Math.floor(seconds / 2628000);
+    if (months > 1) {
+        return months + " months ago";
+    }
+    if (months === 1) {
+        return months + " month ago";
+    }
+
+    const days = Math.floor(seconds / 86400);
+    if (days > 1) {
+        return days + " days ago";
+    }
+    if (days === 1) {
+        return days + " day ago";
+    }
+
+    const hours = Math.floor(seconds / 3600);
+    if (hours > 1) {
+        return hours + " hours ago";
+    }
+    if (hours === 1) {
+        return hours + " hour ago";
+    }
+
+    const minutes = Math.floor(seconds / 60);
+    if (minutes > 1) {
+        return minutes + " minutes ago";
+    }
+    if (minutes === 1) {
+        return minutes + " minute ago";
+    }
+
+    return "just now";
+}
+
 
 // Sign Up
 router.get('/signup', forwardAuthenticated, (req, res) => {
     res.render('signup', {
         title: 'Sign Up',
-        logUser: ""
+        logUser: "",
+        newNotes: ""
     });
 });
 
@@ -117,7 +182,8 @@ router.post('/signup', (req, res) => {
 router.get('/login', forwardAuthenticated, (req, res) => {
     res.render('login', {
         title: 'Log In',
-        logUser: ""
+        logUser: "",
+        newNotes: ""
     });
 });
 
@@ -130,19 +196,89 @@ router.post('/login', (req, res, next) => {
     })(req, res, next);
 });
 
+// Logout Function
+router.get('/logout', (req, res) => {
+    req.logout();
+    req.flash('success_msg', 'You are logged out');
+    res.redirect('/users/login');
+});
+
 // Search Page
 router.get('/search', (req, res) => {
     if(req.user) {
         res.render('search', {
             title: 'Search',
-            logUser: req.user
+            logUser: req.user,
+            newNotes: ""
         })
     } else {
         res.render('search', {
             title: 'Search',
-            logUser: ""
+            logUser: "",
+            newNotes: ""
         });
     }
+});
+
+// Notifications page
+router.get('/notes', ensureAuthenticated, (req, res) => {
+    Note.aggregate([
+        { $match: { user2: req.user.username } },
+        {
+            $lookup: {
+                from: "users",
+                localField: "user2",
+                foreignField: "username",
+                as: "notes"
+            }
+        },
+        {
+            $unwind: "$notes"
+        }
+    ]).then(notes => {
+        res.render('notes', {
+            title: "Notifications",
+            logUser: req.user,
+            newNotes: "",
+            notes: notes
+        });
+    })
+});
+
+// Mark Notification As Read
+router.post('/notes/markAsRead/:id', (req, res) => {
+    let updateNotes = {
+        did_read: true
+    }
+
+    let query = { _id: req.params.id };
+
+    Note.findOneAndUpdate(query, updateNotes, (err) => {
+        if(err) {
+            console.log(err);
+        } else {
+            req.flash(
+                'success_msg',
+                'Note marked as read'
+            );
+            res.redirect(req.get('referer'));
+        }
+    });
+});
+
+// Delete Note
+router.post('/notes/delete/:id', (req, res) => {
+    Note.findOneAndDelete({ _id: req.params.id }, (err) => {
+        if(err) {
+            console.log(err);
+        } else {
+            req.flash(
+                'success_msg',
+                'Note Deleted'
+            );
+            res.redirect(req.get('referer'));
+        }
+    });
 });
 
 // Profile Page
@@ -155,34 +291,158 @@ router.get('/:id', ensureAuthenticated, (req, res) => {
                 if(err) {
                     console.log(err);
                 } else {
-                    res.render('watch', {
-                        title: video.title,
-                        logUser: req.user,
-                        user: user,
-                        videos: videos
-                    });
+                    Note.findOne({ $and: [{ user2: req.user.username }, { did_read: false }] }, (err, newNotes) => {
+                        if(err) {
+                            console.log(err);
+                        } else {
+                            if(err) {
+                                console.log(err);
+                            } else {
+                                res.render('profile', {
+                                    title: user.firstname + ' ' + user.lastname,
+                                    logUser: req.user,
+                                    user: user,
+                                    videos: videos,
+                                    newNotes: newNotes,
+                                });     
+                            }
+                        }
+                    })
                 }
             });
         }
     });
 });
 
-// Create A New Playlist
-router.post('/newPlaylist', (req, res) => {
-    let title = req.body.title;
-    
-    if(!title) {
+// Edit Avatar Function
+router.post('/edit/avatar', upload.single('avatar'), (req, res) => {
+    const file = req.file;
+
+    if(!file) {
         req.flash(
             'error_msg',
-            'Please enter a title'
+            'Please select an image file'
         );
         res.redirect(req.get('referer'));
     } else {
-        let newPlaylist = new Playlist({
-            title: title,
-            user: req.user.username,
+        let updateAvatar = {
+            avatar: file.filename
+        };
+
+        let query = { username: req.user.username }
+
+        User.updateMany(query, updateAvatar, (err) => {
+            if(err) {
+                console.log(err);
+            } else {
+                req.flash(
+                    'success_msg',
+                    'Profile Picture Updated Successfully'
+                );
+                res.redirect(req.get('referer'));
+            }
         });
     }
 });
+
+// Edit Name Function
+router.post('/edit/name', (req, res) => {
+    const firstname = req.body.firstname;
+    const lastname = req.body.lastname;
+
+    if(!firstname || !lastname) {
+        req.flash(
+            'error_msg',
+            'All Feilds Required'
+        );
+        res.redirect(req.get('referer'));
+    } else {
+        let updateName = {
+            firstname: firstname,
+            lastname: lastname
+        };
+
+        let query = { username: req.user.username };
+
+        User.updateMany(query, updateName, (err) => {
+            if(err) {
+                console.log(err);
+            } else {
+                req.flash(
+                    'success_msg',
+                    'Name Updated Successfully'
+                );
+                res.redirect(req.get('referer'));
+            }
+        });
+    }
+});
+
+// Edit Location Function
+router.post('/edit/location', (req, res) => {
+    const city = req.body.city;
+    const state = req.body.state;
+    const country = req.body.country;
+
+    if(!country) { 
+        req.flash(
+            'error_msg',
+            'Country field cannot be empty'
+        );
+        res.redirect(req.get('referer'));
+    } else {
+        let updateLocation = {
+            city: city,
+            state: state,
+            country: country
+        };
+
+        let query = { username: req.user.username }
+
+        User.updateMany(query, updateLocation, (err) => {
+            if(err) {
+                console.log(err);
+            } else {
+                req.flash(
+                    'success_msg',
+                    'Location updated successfuly'
+                )
+                res.redirect(req.get('referer'));
+            }
+        });
+    }
+});
+
+// Edit About Me Function
+router.post('/edit/bio', (req, res) => {
+    const bio = req.body.bio;
+
+    if(!bio) {
+        req.flash(
+            'error_msg',
+            'please Type Somgehting First'
+        );
+        res.redirect(req.get('referer'));
+    } else {
+        let updateBio = {
+            bio: bio
+        }
+
+        let query = { username: req.user.username };
+
+        User.updateMany(query, updateBio, (err) => {
+            if(err) {
+                console.log(err);
+            } else {
+                req.flash(
+                    'success_msg',
+                    'About Me Updated Successfuly'
+                );
+                res.redirect(req.get('referer'));
+            }
+        });
+    }
+});
+
 
 module.exports = router;

@@ -12,6 +12,7 @@ const app = express();
 // Load Models
 const User = require('./models/User');
 const Video = require('./models/Video');
+const Note = require('./models/Note');
 
 // Passport Config
 require('./config/passport')(passport);
@@ -69,16 +70,24 @@ app.get('/', (req, res) => {
             console.log(err);
         } else {
             if(req.user) {
-                res.render('index', {
-                    title: 'VidFriendz',
-                    logUser: req.user,
-                    videos: videos
-                });
+                Note.findOne({ $and: [{ user2: req.user.username }, { did_read: false }] }, (err, newNotes) => {
+                    if(err) {
+                        console.log(err);
+                    } else {
+                        res.render('index', {
+                            title: 'VidFriendz',
+                            logUser: req.user,
+                            videos: videos,
+                            newNotes: newNotes
+                        });
+                    }
+                })
             } else {
                 res.render('index', {
                     title: 'VidFriendz',
                     logUser: "",
-                    videos: videos
+                    videos: videos,
+                    newNotes: ""
                 });
             }
         }
