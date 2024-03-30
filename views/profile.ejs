@@ -10,7 +10,7 @@
         </div>
     </div>
 </div>
-<div class="row" style="margin-top: -150px;">
+<div class="row" style="margin-top: -150px; z-index: 1000;">
     <div class="col-lg-12 text-center">
         <% if(user.avatar) { %>
             <img src="/uploads/<%- user.username %>/<%- user.avatar %>" width="200" height="200" class="rounded-circle">
@@ -26,6 +26,7 @@
                 <div class="row">
                     <div class="col-lg-10">
                         <h3 class="card-title"><%- user.firstname %> <%- user.lastname %></h3>
+                        <p class="text-light"><%- user.subscribers.length %> Subscribers &bull; <%- user.subscriptions.length %> Following</p>
                     </div>
                     <div class="col-lg-2">
                         <% if(user.username == logUser.username) { %>
@@ -36,7 +37,7 @@
                             </form>
                         <% } else { %>
                             <form method="POST" action="/users/subscribe/<%- user.username %>">
-                                <button class="btn btn-outline-primary btn-block" type="submit">Unsubscribe</button>
+                                <button class="btn btn-outline-primary btn-block" type="submit">Subscribe</button>
                             </form>
                         <% } %>
                     </div>
@@ -65,9 +66,6 @@
                     <li class="nav-item">
                         <a class="nav-link active" id="videos-tab" data-toggle="tab" href="#videos" role="tab" aria-controls="videos" aria-selected="true">Videos</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="likes-tab" data-toggle="tab" href="#likes" role="tab" aria-controls="likes" aria-selected="false">Likes</a>
-                    </li>
                 </ul>
                 <div class="tab-content" id="myTabContent">
                     <div class="tab-pane fade show active" id="videos" role="tabpanel" aria-labelledby="videos-tab">
@@ -89,7 +87,6 @@
                             </div>
                         <% } %>
                     </div>
-                    <div class="tab-pane fade" id="likes" role="tabpanel" aria-labelledby="likes-tab">...</div>
                 </div>
             </div>
         </div>
@@ -233,6 +230,36 @@
                                         <div class="col">
                                             <button type="submit" class="btn btn-primary btn-md">Save</button>
                                         </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card bg-dark text-light">
+                        <div class="card-header bg-dark text-warning" id="headingFive">
+                            <h2 class="mb-0">
+                                <button class="btn btn-link btn-block text-warning text-left" type="button" data-toggle="collapse" data-target="#collapseFive" aria-expanded="true" aria-controls="collapseFive">
+                                    Cover Photo
+                                </button>
+                            </h2>
+                        </div>
+                        <div id="collapseFive" class="collapse" aria-labelledby="headingFive" data-parent="#accordionExample">
+                            <div class="card-body">
+                                <form method="POST" action="/users/edit/cover" enctype="multipart/form-data">
+                                    <div class="row">
+                                        <div class="col-lg-2"></div>
+                                        <div class="col-lg-8">
+                                            <input type="file" class="custom-file-input" id="cover" name="cover">
+                                            <label for="avatar">
+                                                <% if(logUser.avatar) { %>
+                                                    <img src="/uploads/<%- logUser.username %>/<%- logUser.coverPic %>" width="300" height="200">
+                                                <% } else { %>
+                                                    <img src="/img/no_cover.jpg" width="300" height="200">
+                                                <% } %>
+                                                <button type="submit" class="btn btn-primary btn-block mt-5">Save</button>
+                                            </label>
+                                        </div>
+                                        <div class="col-lg-2"></div>
                                     </div>
                                 </form>
                             </div>

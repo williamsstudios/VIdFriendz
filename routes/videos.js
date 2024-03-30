@@ -82,11 +82,17 @@ router.get('/upload', ensureAuthenticated, (req, res) => {
     Note.findOne({ $and: [{ user2: req.user.username }, { did_read: false }] }, (err, newNotes) => {
         if(err) {
             console.log(err);
+        } else if(newNotes) {
+            res.render('upload', {
+                title: 'Upload A Video',
+                logUser: req.user,
+                newNotes: 1
+            })
         } else {
             res.render('upload', {
                 title: 'Upload A Video',
                 logUser: req.user,
-                newNotes: newNotes
+                newNotes: 0
             })
         }
     });
@@ -223,7 +229,7 @@ router.get('/watch/:id', ensureAuthenticated, (req, res) => {
                         Note.findOne({ $and: [{ user2: req.user.username }, { did_read: false }] }, (err, newNotes) => {
                             if(err) {
                                 console.log(err);
-                            } else {
+                            } else if(newNotes) {
                                 History.findOne({ $and: [{ video_id: req.params.id }, { user: req.user.username }] }, (err, history) => {
                                     if(err) {
                                         console.log(err);
@@ -234,10 +240,9 @@ router.get('/watch/:id', ensureAuthenticated, (req, res) => {
                                             video: video,
                                             vidUser: vidUser,
                                             timeAgo: timeAgo(video.upload_date),
-                                            playlists: playlists,
                                             comments: comments,
                                             c_timeAgo: timeAgo(comments.date_made),
-                                            newNotes: newNotes
+                                            newNotes: 1
                                         });
                                     } else {
                                         Video.findOneAndUpdate({ _id: req.params.id }, { $push: { views: req.user.username } }).exec();
@@ -255,10 +260,48 @@ router.get('/watch/:id', ensureAuthenticated, (req, res) => {
                                                     video: video,
                                                     vidUser: vidUser,
                                                     timeAgo: timeAgo(video.upload_date),
-                                                    playlists: playlists,
                                                     comments: comments,
                                                     c_timeAgo: timeAgo(comments.date_made),
-                                                    newNotes: newNotes
+                                                    newNotes: 1
+                                                });
+                                            })
+                                            .catch(err => console.log(err));
+                                    }
+                                });
+                            } else {
+                                History.findOne({ $and: [{ video_id: req.params.id }, { user: req.user.username }] }, (err, history) => {
+                                    if(err) {
+                                        console.log(err);
+                                    } else if(history) {
+                                        res.render('watch', {
+                                            title: video.title,
+                                            logUser: req.user,
+                                            video: video,
+                                            vidUser: vidUser,
+                                            timeAgo: timeAgo(video.upload_date),
+                                            comments: comments,
+                                            c_timeAgo: timeAgo(comments.date_made),
+                                            newNotes: 0
+                                        });
+                                    } else {
+                                        Video.findOneAndUpdate({ _id: req.params.id }, { $push: { views: req.user.username } }).exec();
+                                        let newHistory = new History({
+                                            video_id: req.params.id,
+                                            user: req.user.username
+                                        });
+                                                
+                                        newHistory
+                                            .save()
+                                            .then(history => {
+                                                res.render('watch', {
+                                                    title: video.title,
+                                                    logUser: req.user,
+                                                    video: video,
+                                                    vidUser: vidUser,
+                                                    timeAgo: timeAgo(video.upload_date),
+                                                    comments: comments,
+                                                    c_timeAgo: timeAgo(comments.date_made),
+                                                    newNotes: 0
                                                 });
                                             })
                                             .catch(err => console.log(err));
@@ -339,6 +382,46 @@ router.post('/comment/like/:id', (req, res) => {
 router.post('/comment/unlike/:id', (req, res) => {
     Comment.findOneAndUpdate({ _id: req.params.id }, { $pull: { likes: req.user.username } }).exec();
     res.redirect(req.get('referer'));
+});
+
+// Delete Video Function
+router.post('/delete/:id', (req, res) => {
+    Video.findOne({ _id: req.params.id }, (err, video) => {
+        if(err) {
+            console.log(err);
+        } else {
+            let directoryPath = "./public/uploads/" + req.user.username + "/" + video.filename;
+            fs.unlink(directoryPath, (err) => {
+                if (err) {
+                    console.log(err);
+                } else {
+                    Video.findOneAndDelete({ _id: req.params.id }, (err) => {
+                        if(err) {
+                            console.log(err);
+                        } else {
+                            History.deleteMany({ video_id: video._id }, (err) => {
+                                if(err) {
+                                    console.log(err);
+                                } else {
+                                    Comment.deleteMany({ video_id: video._id }, (err) => {
+                                        if(err) {
+                                            console.log(err);
+                                        } else {
+                                            req.flash(
+                                                'success_msg',
+                                                'Video Deleted'
+                                            );
+                                            res.redirect('/'); 
+                                        }
+                                    })
+                                }
+                            });    
+                        }
+                    });
+                }
+            });
+        }
+    });
 });
 
 module.exports = router;

@@ -65,12 +65,12 @@ app.use(function(req, res, next) {
 
 // Home Page
 app.get('/', (req, res) => {
-    Video.find({}, (err, videos) => {
-        if(err) {
-            console.log(err);
-        } else {
-            if(req.user) {
-                Note.findOne({ $and: [{ user2: req.user.username }, { did_read: false }] }, (err, newNotes) => {
+    if(req.user) {
+        Note.findOne({ $and: [{ user2: req.user.username }, { did_read: false }] }, (err, newNotes) => {
+            if(err) {
+                console.log(err);
+            } else if(newNotes) {
+                Video.find({ $or: [ {author: req.user.username }, {author: req.user.subscriptions} ] }, (err, videos) => {
                     if(err) {
                         console.log(err);
                     } else {
@@ -78,20 +78,35 @@ app.get('/', (req, res) => {
                             title: 'VidFriendz',
                             logUser: req.user,
                             videos: videos,
-                            newNotes: newNotes
+                            newNotes: 1
                         });
                     }
-                })
+                });
             } else {
-                res.render('index', {
-                    title: 'VidFriendz',
-                    logUser: "",
-                    videos: videos,
-                    newNotes: ""
+                Video.find({ $or: [ {author: req.user.username }, {author: req.user.subscriptions} ] }, (err, videos) => {
+                    if(err) {
+                        console.log(err);
+                    } else {
+                        res.render('index', {
+                            title: 'VidFriendz',
+                            logUser: req.user,
+                            videos: videos,
+                            newNotes: 0
+                        });
+                    }
                 });
             }
-        }
-    });
+        });
+    } else {
+        Video.find({}, (err, videos) => {
+            res.render('index', {
+                title: 'VidFriendz',
+                logUser: "",
+                videos: videos,
+                newNotes: ""
+            });
+        });
+    }
 });
 
 // Routes

@@ -51,13 +51,13 @@
                             <p class="text-muted m-0"><%- vidUser.subscribers.length %> subscribers</p>
                         </h6>
                     </div>
-                    <div class="col-lg-3 text-right">
+                    <div class="col-lg-3">
                         <ul class="list-group list-group-horizontal" style="background: none; border: none;">
-                            <li class="list-group mr-3" style="background: none; border: none;">
+                            <li class="list-group-item ml-auto" style="background: none; border: none;">
                                 <% if(video.likes == logUser.username) { %>
                                     <form method="POST" action="/videos/unlike/<%- video._id %>">
                                         <button type="submit" style="background: none; border: 0px; outline: none; box-shadow: none; color: #fff72e; font-size: 22px;">
-                                            <i class="fa-solid fa-heart"></i> <%- video.likes.length %>
+                                            <i class="fa-solid fa-heart"></i> <%- video.likes.length %> likes
                                         </button>
                                     </form>
                                 <% } else { %>
@@ -68,6 +68,15 @@
                                     </form>
                                 <% } %>
                             </li>
+                            <% if(video.author == logUser.username) { %>
+                                <li class="list-group-item" style="background: none; border: none;">
+                                    <form method="POST" action="/videos/delete/<%- video._id %>">
+                                        <button type="submit" style="background: none; border: 0px; outline: none; box-shadow: none; color: #fff72e; font-size: 22px;">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </li>
+                            <% } %>
                         </ul>
                     </div>
                 </div>

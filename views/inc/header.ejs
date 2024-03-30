@@ -19,26 +19,36 @@
             </a>
             <ul class="navbar-nav ml-auto">
                 <% if(logUser.username) { %>
-                    <% if(newNotes > 0) { %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/" title="Home Page">
+                            <i class="fa-solid fa-house"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/users/<%- logUser.username %>" title="Profile">
+                            <i class="fa-solid fa-user"></i>
+                        </a>
+                    </li>
+                    <% if(newNotes == 1) { %>
                         <li class="nav-item">
-                            <a class="nav-link" href="/users/notes">
+                            <a class="nav-link" href="/users/notes" title="Notifications">
                                 <i class="fa-solid fa-bell"></i>
                             </a>
                         </li>
                     <% } else { %>
                         <li class="nav-item">
-                            <a class="nav-link" href="/users/notes">
+                            <a class="nav-link" href="/users/notes" title="Notifications">
                                 <i class="fa-regular fa-bell"></i>
                             </a>
                         </li>
                     <% } %>
                     <li class="nav-item">
-                        <a class="nav-link" href="/users/search">
+                        <a class="nav-link" href="/users/search" title="Search">
                             <i class="fa-solid fa-magnifying-glass"></i>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/videos/upload"><i class="fa-solid fa-video"></i></a>
+                        <a class="nav-link" href="/videos/upload" title="Upload"><i class="fa-solid fa-video"></i></a>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link" href="#" id="acctDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-gear"></i></a>

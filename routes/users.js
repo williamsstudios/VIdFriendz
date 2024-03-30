@@ -148,22 +148,11 @@ router.post('/signup', (req, res) => {
                                             if (err) {
                                                 console.log(err);
                                             } else {
-                                                let newPlaylist = new Playlist({
-                                                    title: "Watch Later",
-                                                    user: newUser.username,
-                                                    privacy: "2"
-                                                });
-
-                                                newPlaylist
-                                                    .save()
-                                                    .then(playlist => {
-                                                        req.flash(
-                                                            'success_msg',
-                                                            'You are now registered and can log in'
-                                                        );
-                                                        res.redirect('/');
-                                                    })
-                                                    .catch(err => console.log(err));
+                                                req.flash(
+                                                    'success_msg',
+                                                    'You are now registered and can log in'
+                                                );
+                                                res.redirect('/');
                                             }
                                         });
                                     })
@@ -227,7 +216,7 @@ router.get('/notes', ensureAuthenticated, (req, res) => {
         {
             $lookup: {
                 from: "users",
-                localField: "user2",
+                localField: "user1",
                 foreignField: "username",
                 as: "notes"
             }
@@ -242,13 +231,13 @@ router.get('/notes', ensureAuthenticated, (req, res) => {
             newNotes: "",
             notes: notes
         });
-    })
+    }).catch(err => console.log(err));
 });
 
 // Mark Notification As Read
 router.post('/notes/markAsRead/:id', (req, res) => {
     let updateNotes = {
-        did_read: true
+        did_read: 1
     }
 
     let query = { _id: req.params.id };
@@ -264,7 +253,28 @@ router.post('/notes/markAsRead/:id', (req, res) => {
             res.redirect(req.get('referer'));
         }
     });
-});
+})
+
+// Mark Notification As Unread
+router.post('/notes/markAsUnread/:id', (req, res) => {
+    let updateNotes = {
+        did_read: 0
+    }
+
+    let query = { _id: req.params.id };
+
+    Note.findOneAndUpdate(query, updateNotes, (err) => {
+        if(err) {
+            console.log(err);
+        } else {
+            req.flash(
+                'success_msg',
+                'Note marked as unread'
+            );
+            res.redirect(req.get('referer'));
+        }
+    });
+})
 
 // Delete Note
 router.post('/notes/delete/:id', (req, res) => {
@@ -294,24 +304,62 @@ router.get('/:id', ensureAuthenticated, (req, res) => {
                     Note.findOne({ $and: [{ user2: req.user.username }, { did_read: false }] }, (err, newNotes) => {
                         if(err) {
                             console.log(err);
+                        } else if(newNotes) {
+                            res.render('profile', {
+                                title: user.firstname + ' ' + user.lastname,
+                                logUser: req.user,
+                                user: user,
+                                videos: videos,
+                                newNotes: 1,
+                            });     
                         } else {
-                            if(err) {
-                                console.log(err);
-                            } else {
-                                res.render('profile', {
-                                    title: user.firstname + ' ' + user.lastname,
-                                    logUser: req.user,
-                                    user: user,
-                                    videos: videos,
-                                    newNotes: newNotes,
-                                });     
-                            }
+                            res.render('profile', {
+                                title: user.firstname + ' ' + user.lastname,
+                                logUser: req.user,
+                                user: user,
+                                videos: videos,
+                                newNotes: 0,
+                            });   
                         }
-                    })
+                    });
                 }
             });
         }
     });
+});
+
+// Subscribe Function
+router.post('/subscribe/:id', (req, res) => {
+    User.findOneAndUpdate({ username: req.user.username }, { $push: { subscriptions: req.params.id } }).exec();
+    User.findOneAndUpdate({ username: req.params.id }, { $push: { subscribers: req.user.username } }).exec();
+    let newNote = new Note({
+        user1: req.user.username,
+        user2: req.params.id,
+        app: 'subs',
+        note: 'subscribed to your channel'
+    });
+
+    newNote
+        .save()
+        .then(note => {
+            req.flash(
+                'success_msg',
+                'You subscribed to this channel'
+            );
+            res.redirect(req.get('referer'));
+        })
+        .catch(err => console.log(err));
+});
+
+// Unsubscribe Function
+router.post('/subscribe/:id', (req, res) => {
+    User.findOneAndUpdate({ username: req.user.username }, { $pull: { subscriptions: req.params.id } }).exec();
+    User.findOneAndUpdate({ username: req.params.id }, { $pull: { subscribers: req.user.username } }).exec();
+    req.flash(
+        'success_msg',
+        'You unsubscribed from this channel'
+    );
+    res.redirect(req.get('referer'));
 });
 
 // Edit Avatar Function
@@ -338,6 +386,37 @@ router.post('/edit/avatar', upload.single('avatar'), (req, res) => {
                 req.flash(
                     'success_msg',
                     'Profile Picture Updated Successfully'
+                );
+                res.redirect(req.get('referer'));
+            }
+        });
+    }
+});
+
+// Edit Cover Photo FUnction
+router.post('/edit/cover', upload.single('cover'), (req, res) => {
+    const file = req.file;
+
+    if(!file) {
+        req.flash(
+            'error_msg',
+            'Please select an image file'
+        );
+        res.redirect(req.get('referer'));
+    } else {
+        let updateCover = {
+            coverPic: file.filename
+        };
+
+        let query = { username: req.user.username }
+
+        User.updateMany(query, updateCover, (err) => {
+            if(err) {
+                console.log(err);
+            } else {
+                req.flash(
+                    'success_msg',
+                    'Cover Picture Updated Successfully'
                 );
                 res.redirect(req.get('referer'));
             }
