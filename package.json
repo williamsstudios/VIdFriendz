@@ -4,8 +4,7 @@
     "main": "server.js",
     "scripts": {
         "start": "node server.js",
-        "dev": "nodemon server.js",
-        "deploy": "firebase deploy --only functions:api"
+        "dev": "nodemon server.js"
     },
     "devDependencies": {
         "nodemon": "^3.1.0"
