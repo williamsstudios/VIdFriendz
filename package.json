@@ -4,7 +4,8 @@
     "main": "server.js",
     "scripts": {
         "start": "node server.js",
-        "dev": "nodemon server.js"
+        "dev": "nodemon server.js",
+        "deploy": "firebase deploy --only functions:api"
     },
     "devDependencies": {
         "nodemon": "^3.1.0"
@@ -15,8 +16,6 @@
         "ejs": "^2.6.1",
         "express": "^4.16.4",
         "express-session": "^1.15.6",
-        "firebase": "^10.10.0",
-        "firebase-tools": "^13.6.0",
         "fs": "^0.0.1-security",
         "mongoose": "^5.7.5",
         "multer": "^1.4.4",
