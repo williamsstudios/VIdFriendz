@@ -1,0 +1,139 @@
+<%- include('./inc/header.ejs') %>
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card bg-dark text-light">
+            <div class="card-body p-0">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div id="m_video_player_box">
+                            <video src="/uploads/<%- video.author %>/<%- video.filename %>" id="my_video" width="100%" autoplay></video>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div id="video_controls_bar">
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <input id="seekslider" type="range" min="0" max="100" value="0" step="1">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <ul class="list-group list-group-horizontal" style="background: none; border: none;">
+                                        <li class="list-group-item p-0" style="background: none; border: none;">
+                                            <button id="playpausebtn"><i class="fa-solid fa-pause"></i></button>
+                                        </li>
+                                        <li class="list-group-item p-0 pl-2" style="background: none; border: none;">
+                                            <button id="mutebtn"><i class="fa-solid fa-volume-high"></i></button>
+                                        </li>
+                                        <li class="list-group-item p-0 pl-2 pt-1" style="background: none; border: none;">
+                                            <input id="volumeslider" type="range" min="0" max="100" value="100" step="1">
+                                        </li>
+                                        <li class="list-group-item p-0 pt-2" style="background: none; border: none;">
+                                            <span id="curtimetext" style="margin-left: 20px; font-size: 15px;">00:00</span> / <span id="durtimetext" style="font-size: 15px;">00:00</span>          
+                                        </li>
+                                        <li class="list-group-item p-0 ml-auto" style="background: none; border: none;">
+                                            <button id="fullscreenbtn" style="float: right; background: none; border: 0px; color: #fff72e; font-size: 25px;"><i class="fa-solid fa-expand"></i></button>          
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card bg-dark text-light">
+            <div class="card-body">
+                <div class="row mb-1">
+                    <ul class="list-group list-group-horizontal" style="background: none; border: 0px;">
+                        <li class="list-group-item" style="background: none; border: 0px;">
+                            <h5 class="card-title" style="color: #fff72e;"><%- video.title %></h5>
+                        </li>
+                    </ul>
+                </div>
+                <div class="row pb-2 border-bottom">
+                    <div class="col-lg-12">
+                        <p><b><%- video.views.length %> views &bull; <%- timeAgo %></b></p>
+                        <p><%- video.description %></p>
+                    </div>
+                </div>
+                <div class="row pt-3 pb-2 border-bottom">
+                    <div class="col-lg-12">
+                        <ul class="list-group list-group-horizontal" style="background: none; border: none;">
+                            <li class="list-group-item p-0 text-center mr-5 ml-3" style="background: none; border: none;">
+                                <% if(video.likes == logUser.username) { %>
+                                    <form method="POST" action="/mobile/unlike/<%- video._id %>">
+                                        <button type="submit" style="background: none; border: 0px; outline: none; box-shadow: none; color: #fff72e;">
+                                            <h3><i class="fa-solid fa-heart"></i></h3>
+                                            <p style="font-size: 20px;"><%- video.likes.length %> likes</p>
+                                        </button>
+                                    </form>
+                                <% } else { %>
+                                    <form method="POST" action="/mobile/like/<%- video._id %>">
+                                        <button type="submit" style="background: none; border: 0px; outline: none; box-shadow: none; color: #CCC;">
+                                            <h3><i class="fa-regular fa-heart"></i></h3>
+                                            <p style="font-size: 20px;">Like</p>
+                                        </button>
+                                    </form>
+                                <% } %>
+                            </li>
+                            <li class="list-group-item p-0 text-center mr-5" style="background: none; border: none;">
+                                <a href="#" class="text-light">
+                                    <h3><i class="fa-regular fa-comment"></i></h3>
+                                    <p style="font-size: 20px;">Comment</p>
+                                </a>
+                            </li>
+                            <li class="list-group-item p-0 text-center dropdown" style="background: none; border: none;">
+                                <a href="#" class="text-light" id="moreDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <h3><i class="fa-solid fa-ellipsis-vertical"></i></h3>
+                                    <p style="font-size: 20px;">More</p>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right bg-dark" aria-labelledby="moreDropdown">
+                                    <% if(vidUser.username == logUser.username) { %>
+                                        <form method="POST" action="/mobile/deleteVid/<%- video._id %>">
+                                            <button type="submit" style="background: none; border: 0px; outline: none; box-shadow: none; color: #FFF;">Delete</button>
+                                        </form>
+                                    <% } %>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <ul class="list-group list-group-horizontal" style="background: none; border: none;">
+                        <li class="list-group-item" style="background: none; border: none;">
+                            <% if(vidUser.avatar) { %>
+                                <a href="/mobile/<%- video.author %>">
+                                    <img src="/uploads/<%- video.author %>/<%- vidUser.avatar %>" width="50" height="50" class="rounded-circle">
+                                </a>
+                            <% } else { %>
+                                <a href="/mobile/<%- video.author %>">
+                                    <img src="/img/no_pic.jpg" width="50" height="50" class="rounded-circle">
+                                </a>
+                            <% } %>
+                        </li>
+                        <li class="list-group-item pl-0" style="background: none; border: none;">
+                            <a href="/mobile/<%- video.author %>"><%- vidUser.firstname %> <%- vidUser.lastname %></a>
+                            <p class="text-muted m-0"><%- vidUser.subscribers.length %> subscribers</p>
+                        </li>
+                        <li class="list-group-item pl-0 pt-3" style="background: none; border: none;">
+                            <% if(logUser.username == vidUser.subscribers) { %>
+                                <form method="POST" action="/mobile/unsubscribe/<%- vidUser.username %>">
+                                    <button type="submit" class="btn btn-primary btn-block">Subscribed</button>
+                                </form>
+                            <% } else { %>
+                                <form method="POST" action="/mobile/subscribe/<%- vidUser.username %>">
+                                    <button type="submit" class="btn btn-primary btn-block">Subscribe</button>
+                                </form>
+                            <% } %>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/js/video_player.js"></script>
+<%- include('./inc/footer.ejs') %>

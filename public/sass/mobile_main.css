@@ -1,0 +1,149 @@
+body {
+  background: #1d1d1d;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+a {
+  color: #fff72e;
+}
+
+a:hover {
+  color: #fff72e;
+  text-decoration: none;
+}
+
+.navbar {
+  width: 100%;
+  height: 50px;
+  background: #000000;
+}
+
+a.navbar-brand {
+  color: #fff72e;
+  font-family: "Anonymous Pro", monospace;
+}
+
+.form-control {
+  border-radius: 0px;
+  border: 0px;
+}
+
+.form-control:hover {
+  box-shadow: none;
+  outline: none;
+}
+
+.form-control:focus {
+  box-shadow: 0px;
+  outline: none;
+}
+
+.btn {
+  border-radius: 0px;
+  outline: none;
+  box-shadow: none;
+}
+
+.btn-primary {
+  background: #fff72e;
+  color: #000000;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: #fff72e;
+  color: #000000;
+  border: none;
+}
+
+.btn-outline-primary {
+  border: 1px #fff72e solid;
+  color: #fff72e;
+}
+
+.btn-primary:hover {
+  border: 1px #fff72e solid;
+  color: #fff72e;
+}
+
+.video-container {
+  background: #1d1d1d;
+  border: 0px;
+}
+
+.video-box {
+  width: 100%;
+  background: #000000;
+}
+
+#video_player_box {
+  width: 100%;
+  background: #000000;
+}
+
+#video_controls_bar {
+  background: #000000;
+  color: #fff72e;
+  padding: 5px;
+}
+
+button#playpausebtn {
+  background: none;
+  border: none;
+  color: #fff72e;
+  font-size: 25px;
+}
+
+button#mutebtn {
+  background: none;
+  border: none;
+  color: #fff72e;
+  font-size: 25px;
+}
+
+input#seekslider {
+  width: 100%;
+}
+
+input#volumeslider {
+  width: 60px;
+}
+
+input[type=range] {
+  -webkit-appearance: none !important;
+  background: #fff72e;
+  border: none;
+  height: 4px;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  background: #FFF;
+  height: 5px;
+  width: 5px;
+  cursor: pointer;
+}
+
+#drop_zone {
+  width: 100%;
+  min-height: 200px;
+  border: 2px dashed #CCC;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  color: #FFF;
+}
+
+#drop_zone.hover {
+  border: 2px dashed #fff72e;
+  color: #fff72e;
+}
+
+.vid_thumbnail {
+  width: 300px;
+  height: 300px;
+}/*# sourceMappingURL=mobile_main.css.map */

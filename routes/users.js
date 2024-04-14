@@ -76,8 +76,7 @@ function timeAgo(date) {
     return "just now";
 }
 
-
-// Sign Up
+// Sign Up Page
 router.get('/signup', forwardAuthenticated, (req, res) => {
     res.render('signup', {
         title: 'Sign Up',
@@ -209,6 +208,43 @@ router.get('/search', (req, res) => {
     }
 });
 
+// Profile Page
+router.get('/:id', ensureAuthenticated, (req, res) => {
+    User.findOne({ username: req.params.id }, (err, user) => {
+        if(err) {
+            console.log(err);
+        } else {
+            Video.find({ author: user.username }, (err, videos) => {
+                if(err) {
+                    console.log(err);
+                } else {
+                    Note.findOne({ $and: [{ user2: req.user.username }, { did_read: false }] }, (err, newNotes) => {
+                        if(err) {
+                            console.log(err);
+                        } else if(newNotes) {
+                            res.render('profile', {
+                                title: user.firstname + ' ' + user.lastname,
+                                logUser: req.user,
+                                user: user,
+                                videos: videos,
+                                newNotes: 1,
+                            });     
+                        } else {
+                            res.render('profile', {
+                                title: user.firstname + ' ' + user.lastname,
+                                logUser: req.user,
+                                user: user,
+                                videos: videos,
+                                newNotes: 0,
+                            });   
+                        }
+                    });
+                }
+            });
+        }
+    });
+});
+
 // Notifications page
 router.get('/notes', ensureAuthenticated, (req, res) => {
     Note.aggregate([
@@ -253,7 +289,7 @@ router.post('/notes/markAsRead/:id', (req, res) => {
             res.redirect(req.get('referer'));
         }
     });
-})
+});
 
 // Mark Notification As Unread
 router.post('/notes/markAsUnread/:id', (req, res) => {
@@ -274,7 +310,7 @@ router.post('/notes/markAsUnread/:id', (req, res) => {
             res.redirect(req.get('referer'));
         }
     });
-})
+});
 
 // Delete Note
 router.post('/notes/delete/:id', (req, res) => {
@@ -287,43 +323,6 @@ router.post('/notes/delete/:id', (req, res) => {
                 'Note Deleted'
             );
             res.redirect(req.get('referer'));
-        }
-    });
-});
-
-// Profile Page
-router.get('/:id', ensureAuthenticated, (req, res) => {
-    User.findOne({ username: req.params.id }, (err, user) => {
-        if(err) {
-            console.log(err);
-        } else {
-            Video.find({ author: user.username }, (err, videos) => {
-                if(err) {
-                    console.log(err);
-                } else {
-                    Note.findOne({ $and: [{ user2: req.user.username }, { did_read: false }] }, (err, newNotes) => {
-                        if(err) {
-                            console.log(err);
-                        } else if(newNotes) {
-                            res.render('profile', {
-                                title: user.firstname + ' ' + user.lastname,
-                                logUser: req.user,
-                                user: user,
-                                videos: videos,
-                                newNotes: 1,
-                            });     
-                        } else {
-                            res.render('profile', {
-                                title: user.firstname + ' ' + user.lastname,
-                                logUser: req.user,
-                                user: user,
-                                videos: videos,
-                                newNotes: 0,
-                            });   
-                        }
-                    });
-                }
-            });
         }
     });
 });
@@ -344,7 +343,7 @@ router.post('/subscribe/:id', (req, res) => {
         .then(note => {
             req.flash(
                 'success_msg',
-                'You subscribed to this channel'
+                'Unsubscribed to this channel'
             );
             res.redirect(req.get('referer'));
         })
@@ -352,7 +351,7 @@ router.post('/subscribe/:id', (req, res) => {
 });
 
 // Unsubscribe Function
-router.post('/subscribe/:id', (req, res) => {
+router.post('/unsubscribe/:id', (req, res) => {
     User.findOneAndUpdate({ username: req.user.username }, { $pull: { subscriptions: req.params.id } }).exec();
     User.findOneAndUpdate({ username: req.params.id }, { $pull: { subscribers: req.user.username } }).exec();
     req.flash(
@@ -522,6 +521,5 @@ router.post('/edit/bio', (req, res) => {
         });
     }
 });
-
 
 module.exports = router;

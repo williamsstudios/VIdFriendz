@@ -1,0 +1,102 @@
+<%- include('./inc/header.ejs') %>
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mt-4 border-0" style="background: #1d1d1d;">
+            <div class="card-body">
+                <h5 class="card-title text-light">Upload A Video</h5>
+                <hr />
+                <form method="POST" action="/mobile/upload">
+                    <div id="drop_zone">
+                        <p>Drag And Drop Video File(s)</p>
+                    </div>
+                </form>
+                <div id="uploadedVideos" class="card-body"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4"></div>
+</div>
+<script>
+var dropZone = document.getElementById('drop_zone');
+
+dropZone.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    dropZone.classList.add('hover');
+});
+
+dropZone.addEventListener('dragleave', (event) => {
+    event.preventDefault();
+    dropZone.classList.remove('hover');
+});
+
+dropZone.addEventListener('drop', (event) => {
+    event.preventDefault();
+    dropZone.classList.remove('hover');
+    var files = event.dataTransfer.files;
+    handleFiles(files);
+});
+
+function handleFiles(files) {
+    for(var count = 0; count < files.length; count++) {
+        var file = files[count];
+        uploadFile(file);
+    }
+}
+
+function uploadFile(file) {
+    var formData = new FormData();
+    formData.append('file', file);
+    fetch('/videos/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        const gallery = document.getElementById('uploadedVideos');
+        let html = `
+            <div class="row mb-2">
+                <div class="col">
+                    <video src="/uploads/<%- logUser.username %>/${data.filename}" class="vid_thumbnail">    
+                </div>
+            </div>
+            <form method="POST" action="/videos/edit/${data.filename}">
+                <div class="row mb-2">
+                    <div class="col">
+                        <label for="title" class="text-light">Title</label>
+                        <input type="text" class="form-control" id="title" name="title" value="${data.filename}">
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col">
+                        <label for="description" class="text-light">Description</label>
+                        <textarea id="description" name="description" class="form-control" rows="5" cols="0"></textarea>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col">
+                        <label for="category" class="text-light">Category</label>
+                        <select id="category" name="category" class="form-control">
+                            <option value="Shopping">Shopping</option>   
+                            <option value="Music">Music</option>  
+                            <option value="Movies & TV">Movies & TV</option>  
+                            <option value="Gaming">Gaming</option>  
+                            <option value="News">News</option>  
+                            <option value="Sports">Sports</option>  
+                            <option value="Courses">Courses</option>  
+                            <option value="Fashion & Beauty">Fashion & Beauty</option>  
+                            <option value="Podcasts">Podcasts</option>   
+                        </select>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col">
+                        <button type="submit" class="btn btn-primary btn-md">Update</button>    
+                    </div>
+                </div>
+            </form>`;
+        gallery.innerHTML = gallery.innerHTML + html;
+    });
+}
+</script>
+
+<%- include('./inc/footer.ejs') %>

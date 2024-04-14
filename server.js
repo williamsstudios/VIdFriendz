@@ -112,6 +112,7 @@ app.get('/', (req, res) => {
 // Routes
 app.use('/users', require('./routes/users'));
 app.use('/videos', require('./routes/videos'));
+app.use('/mobile', require('./routes/mobile'));
 
 // Sztart Server
 const PORT = process.env.PORT || 3000;
