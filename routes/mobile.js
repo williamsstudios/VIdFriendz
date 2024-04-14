@@ -17,7 +17,7 @@ const Comment = require('../models/Comment');
 // Multer Config
 var storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, '../public/uploads/' + req.user.username)
+        cb(null, './public/uploads/' + req.user.username)
     },
     filename: (req, file, cb) => {
         cb(null, Date.now() + path.extname(file.originalname))
@@ -60,7 +60,11 @@ router.post('/upload', upload.single('file'), (req, res) => {
     newVideo
         .save()
         .then(video => {
-            res.json({ filename : req.file.filename });
+            req.flash(
+                'success_msg',
+                'Video Uploaded'
+            );
+            res.redirect('/mobile/edit/video/' + newVideo._id);
         })
         .catch(err => console.log(err));
 });
@@ -89,10 +93,73 @@ router.post('/thumbnail/:id', upload.single('thumbnail'), (req, res) => {
                     'success_msg',
                     'Video Updated'
                 )
-                res.redirect('/mobile/');
+                res.redirect('/mobile/edit_video/' + req.params.id);
             }
         });
     }
+});
+
+// Edit Video File Page
+router.get('/edit/video/:id', ensureAuthenticated, (req, res) => {
+    Video.findOne({ _id: req.params.id}, (err, video) => {
+        if(err) {
+            console.log(err);
+        } else {
+            res.render('../mobile/edit_video', {
+                title: 'Edit Video',
+                logUser: req.user,
+                newNotes: 0,
+                video: video
+            });
+        }
+    });
+});
+
+// Edit Video File Function
+router.post('/edit/video/:id', (req, res) => {
+    const title = req.body.title;
+    const description = req.body.description;
+    const category = req.body.category;
+
+    let updateVideo = {
+        title: title,
+        description: description,
+        category: category
+    }
+
+    let query = { _id: req.params.id };
+
+    Video.findOneAndUpdate(query, updateVideo, (err) => {
+        if(err) {
+            console.log(err);
+        } else {
+            User.find({ username: req.user.username }, (err, subscribers) => {
+                if(err) {
+                    console.log(err);
+                } else {
+                    subscribers.forEach(subscriber => {
+                        let newNote = new Note({
+                            user1: req.user.username,
+                            user2: subscriber.username,
+                            app: "New Video Upload",
+                            note: "added a new video"
+                        });
+
+                        newNote
+                            .save()
+                            .then(subscribers => {
+                                req.flash(
+                                    'success_msg',
+                                    'Video Updated'
+                                )
+                                res.redirect('/mobile/edit/video/' + req.params.id);
+                            })
+                            .catch(err => console.log(err));
+                    })
+                }
+            });
+        }
+    });
 });
 
 // Time Ago Function

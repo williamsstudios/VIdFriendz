@@ -1,0 +1,85 @@
+<%- include('./inc/header.ejs') %>
+<div class="row">
+    <div class="col-lg-12 pt-3">
+        <h4 class="text-light">Edit Video Information</h4>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-12">
+        <div class="row mb-2">
+            <div class="col">
+                <% if(video.thumbnail) { %>
+                    <img src="/uploads/<%- video.author %>/<%- video.thumbnail %>" width="100%" height="200">
+                <% } else { %>
+                    <img src="/img/no_cover.jpg" width="100%" height="200">
+                <% } %>
+            </div>
+        </div>
+        <div class="row mb-2 border-bottom">
+            <div class="col-lg-12 text-center">
+                <form method="POST" action="/mobile/thumbnail/<%- video._id %>" enctype="multipart/form-data">
+                    <div clsss="row mb-2">
+                        <Div class="col-lg-12">
+                            <label for="thumbnail">
+                               <img src="/img/thumbBtn.png" width="155" height="36">
+                            </label>
+                            <input type="file" id="thumbnail" name="thumbnail" style="display: none;"> 
+                        </Div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-lg-12">
+                            <button type="submit" class="btn btn-outline-primary">Save</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <form method="POST" action="/mobile/edit/video/<%- video._id %>">
+            <div class="row mb-2">
+                <div class="col">
+                    <label for="title" class="text-light">Title</label>
+                    <% if(video.title) { %>
+                        <input type="text" class="form-control" id="title" name="title" value="<%- video.title %>">
+                    <% } else { %>
+                        <input type="text" class="form-control" id="title" name="title" placeholder="Enter A Title">
+                    <% } %>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col">
+                    <label for="description" class="text-light">Description</label>
+                    <% if(video.description) { %>
+                        <textarea id="description" name="description" class="form-control" rows="5" cols="0"><%- video.description %></textarea>
+                    <% } else { %>
+                        <textarea id="description" name="description" class="form-control" rows="5" cols="0"></textarea>
+                    <% } %>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col">
+                    <label for="category" class="text-light">Category</label>
+                    <select id="category" name="category" class="form-control">
+                        <% if(video.category) { %>
+                            <option value="<%- video.category %>"><%- video.category %></option>
+                        <% } %>
+                        <option value="Shopping">Shopping</option>   
+                        <option value="Music">Music</option>  
+                        <option value="Movies & TV">Movies & TV</option>  
+                        <option value="Gaming">Gaming</option>  
+                        <option value="News">News</option>  
+                        <option value="Sports">Sports</option>  
+                        <option value="Courses">Courses</option>  
+                        <option value="Fashion & Beauty">Fashion & Beauty</option>  
+                        <option value="Podcasts">Podcasts</option>   
+                    </select>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col">
+                    <button type="submit" class="btn btn-primary btn-md">Update</button>    
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<%- include('./inc/footer.ejs') %>

@@ -146,4 +146,8 @@ input[type=range]::-webkit-slider-thumb {
 .vid_thumbnail {
   width: 300px;
   height: 300px;
+}
+
+#videos {
+  width: 100%;
 }/*# sourceMappingURL=mobile_main.css.map */
