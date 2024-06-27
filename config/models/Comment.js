@@ -1,10 +1,13 @@
 const mongoose = require('mongoose');
 
 const CommentSchema = new mongoose.Schema({
-    author: {
+    user1: {
         type: String
     },
-    post_id: {
+    user2: {
+        tupe: String
+    },
+    video_id: {
         type: String
     },
     data: {
@@ -21,4 +24,4 @@ const CommentSchema = new mongoose.Schema({
 
 const Comment = mongoose.model('Comment', CommentSchema);
 
-module.exports = Comment;                                                                                                                                                                                
+module.exports = Comment;

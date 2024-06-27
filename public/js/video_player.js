@@ -1,11 +1,10 @@
-var vid, playbtn, seekslider, curtimetext, durtimetext, mutebtn, volumeslider, fullscreenbtn;
+var vid, playbtn, seekslider, curtimetext, mutebtn, volumeslider, fullscreenbtn;
         function intializePlayer(){
             // Set object references
             vid = document.getElementById("my_video");
             playbtn = document.getElementById("playpausebtn");
             seekslider = document.getElementById("seekslider");
             curtimetext = document.getElementById("curtimetext");
-            durtimetext = document.getElementById("durtimetext");
             mutebtn = document.getElementById("mutebtn");
             volumeslider = document.getElementById("volumeslider");
             fullscreenbtn = document.getElementById("fullscreenbtn");
@@ -36,14 +35,9 @@ var vid, playbtn, seekslider, curtimetext, durtimetext, mutebtn, volumeslider, f
             seekslider.value = nt;
             var curmins = Math.floor(vid.currentTime / 60);
             var cursecs = Math.floor(vid.currentTime - curmins * 60);
-            var durmins = Math.floor(vid.duration / 60);
-            var dursecs = Math.floor(vid.duration - durmins * 60);
             if(cursecs < 10){ cursecs = "0"+cursecs; }
-            if(dursecs < 10){ dursecs = "0"+dursecs; }
             if(curmins < 10){ curmins = "0"+curmins; }
-            if(durmins < 10){ durmins = "0"+durmins; }
             curtimetext.innerHTML = curmins+":"+cursecs;
-            durtimetext.innerHTML = durmins+":"+dursecs;
         }
         function vidmute(){
             if(vid.muted){

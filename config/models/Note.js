@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 
 const NoteSchema = new mongoose.Schema({
-    initator: {
+    user1: {
         type: String
     },
-    receiver: {
+    user2: {
         type: [String]
     },
     app: {

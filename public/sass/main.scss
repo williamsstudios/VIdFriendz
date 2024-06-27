@@ -1,152 +1,91 @@
-$color-1: #000000;
-$color-2: #fff72e;
-$color-3: #1d1d1d;
-
-$font-family: "Anonymous Pro", monospace;
+$color-1: #FFFFFF;
+$color-2: #556970;
+$color-3: #556970;
+$color-4: #ABA944;
 
 body {
-    background: $color-3;
-}
-
-a {
-    color: $color-2;
+    background: $color-1;
 }
 a:hover {
-    color: $color-2;
     text-decoration: none;
 }
 
 .navbar {
     background: $color-1;
+    box-shadow: 0 4px 2px -2px gray;
 }
-
-a.navbar-brand {
+a.nav-link {
     color: $color-2;
-    font-family: $font-family;
 }
 
 .form-control {
     border-radius: 0px;
-    border: 0px;
 }
-.form-control:hover {
+.form-control:focus, .form-control:hover {
     box-shadow: none;
     outline: none;
-}
-.form-control:focus {
-    box-shadow: 0px;
-    outline: none;
-}
-
-.btn {
-    border-radius: 0px;
-    outline: none;
-    box-shadow: none;
-}
-
-.btn-primary {
-    background: $color-2;
-    color: $color-1;
-    border: none;
-}
-.btn-primary:hover {
-    background: $color-2;
-    color: $color-1;
-    border: none;
-}
-.btn-outline-primary {
-    border: 1px $color-2 solid;
-    color: $color-2;
-}
-.btn-primary:hover {
-    border: 1px $color-2 solid;
-    color: $color-2;
-}
-
-.container {
-    max-width: 900px;
-}
-.video-container {
-    background: $color-3;
-    border: 0px;
-}
-.video-box {
-    width: 100%;
-    background: $color-1;
-}
-
-#query {
-    background: $color-3;
-    color: $color-2;
-    border: 1px $color-2 solid;
-}
-#searchBtn {
-    background: $color-3;
-    color: $color-2;
-    border: 1px $color-2 solid;
-}
-
-#drop_zone {
-    width: 100%;
-    min-height: 200px;
-    border: 2px dashed #CCC;
-    padding: 20px;
-    box-sizing: border-box;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    color: #FFF;
-}
-#drop_zone.hover {
-    border: 2px dashed $color-2;
-    color: $color-2;
-}
-
-.vid_thumbnail {
-    width: 300px;
-    height: 300px;
 }
 
 // Video Player
+#my_video {
+    width: 100%;
+}
 #video_player_box {
-  width: 100%;
-  background: $color-1;
-  margin-bottom: 70px;
-  box-shadow: 5px 5px 5px #000;
-}
-
-#video_controls_bar {
-  background: $color-1; 
-  padding:10px; 
-  color: $color-2;
-}
-
-button#playpausebtn {
-  background: none;
-  border: none;
-  color: $color-2;
-  font-size: 22px;
-}
-button#mutebtn {
-  background: none; 
-  border: none;
-  color: $color-2;
-  font-size: 22px;
-}
-input#seekslider{ width: 50%; }
-input#volumeslider{ width: 30px;}
-input[type='range'] {
-    -webkit-appearance: none !important;
-    background: $color-2;
+    width: 100%;
+    background: $color-1;
+    margin-bottom: 70px;
+    box-shadow: 5px 5px 5px #000;
+  }
+  
+  #video_controls_bar {
+    background: $color-2; 
+    padding:10px; 
+    color: $color-4;
+    margin-top: -5px;
+    width: 100%;
+  }
+  
+  button#playpausebtn {
+    background: none;
     border: none;
-    height:4px;
-}
-input[type='range']::-webkit-slider-thumb {
-    -webkit-appearance: none !important;
-    background: #FFF;
-    height:15px;
-    width:15px;
-    border-radius:100%;
-    cursor:pointer;
+    color: $color-4;
+    font-size: 22px;
+    float: left;
+    margin-top: -7px;
+    margin-right: 10px;
+  }
+  button#mutebtn {
+    background: none; 
+    border: none;
+    color: $color-4;
+    font-size: 22px;
+    float: left;
+    margin-top: -7px;
+    margin-right: 10px;
+  }
+  input#seekslider{ width: 50%; float: left; margin-top: 7px;}
+  input#volumeslider{ width: 80px; float: left; margin-top: 7px;}
+  input[type='range'] {
+      -webkit-appearance: none !important;
+      background: $color-4;
+      border: none;
+      height:4px;
+      float: left;
+  }
+  input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none !important;
+      background: #FFF;
+      height:15px;
+      width:15px;
+      border-radius:100%;
+      cursor:pointer;
+      float: left;
+  }
+
+#messages {
+    width: 100%;
+    min-height: 700px;
+    border: 1px #AAA solid;
+    padding: 10px;
+    overflow-y: scroll;
 }

@@ -31,10 +31,6 @@ const VideoSchema = new mongoose.Schema({
     },
     privacy: {
         type: String
-    },
-    featured: {
-        type: Boolean,
-        default: false
     }
 });
 

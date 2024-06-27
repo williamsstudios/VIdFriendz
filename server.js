@@ -4,15 +4,13 @@ const passport = require('passport');
 const flash = require('connect-flash');
 const session = require('express-session');
 const path = require('path');
-const { forwardAuthenticated, ensureAuthenticated } = require('./config/auth');
 
 // Init App
 const app = express();
 
-// Load Models
+// Load Modals
 const User = require('./models/User');
 const Video = require('./models/Video');
-const Note = require('./models/Note');
 
 // Passport Config
 require('./config/passport')(passport);
@@ -42,6 +40,7 @@ app.use(express.urlencoded({ extended: true }));
 // Express Session
 app.use(
     session({
+        name: 'login',
         secret: 'secret',
         resave: true,
         saveUninitialized: true
@@ -52,10 +51,10 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Connect flash
+// Connect Flash
 app.use(flash());
 
-// Global variables
+// Global Variables
 app.use(function(req, res, next) {
     res.locals.success_msg = req.flash('success_msg');
     res.locals.error_msg = req.flash('error_msg');
@@ -65,56 +64,67 @@ app.use(function(req, res, next) {
 
 // Home Page
 app.get('/', (req, res) => {
-    if(req.user) {
-        Note.findOne({ $and: [{ user2: req.user.username }, { did_read: false }] }, (err, newNotes) => {
-            if(err) {
-                console.log(err);
-            } else if(newNotes) {
-                Video.find({ $or: [ {author: req.user.username }, {author: req.user.subscriptions} ] }, (err, videos) => {
-                    if(err) {
-                        console.log(err);
-                    } else {
-                        res.render('index', {
-                            title: 'VidFriendz',
-                            logUser: req.user,
-                            videos: videos,
-                            newNotes: 1
-                        });
-                    }
-                });
-            } else {
-                Video.find({ $or: [ {author: req.user.username }, {author: req.user.subscriptions} ] }, (err, videos) => {
-                    if(err) {
-                        console.log(err);
-                    } else {
-                        res.render('index', {
-                            title: 'VidFriendz',
-                            logUser: req.user,
-                            videos: videos,
-                            newNotes: 0
-                        });
-                    }
-                });
+    Video.aggregate([
+        { $match: { featured: true } },
+        {
+            $lookup: {
+                from: "users",
+                localField: "author",
+                foreignField: "username",
+                as: "featVid"
             }
-        });
-    } else {
-        Video.find({}, (err, videos) => {
-            res.render('index', {
-                title: 'VidFriendz',
-                logUser: "",
-                videos: videos,
-                newNotes: ""
-            });
-        });
-    }
+        },
+        {
+            $unwind: "$featVid"
+        }
+    ]).then(featVid => {
+        Video.aggregate([
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "username",
+                    as: "videos"
+                }
+            },
+            {
+                $unwind: "$videos"
+            }
+        ]).then(videos => {
+            User.find({}, (err, channels) => {
+                if(err) {
+                    console.log(err);
+                } else {
+                    if(req.user) {
+                        res.render('index', {
+                            title: 'VidFriendz',
+                            featVid: featVid,
+                            logUser: req.user,
+                            videos: videos,
+                            channels: channels
+                        });
+                    } else {
+                        res.render('index', {
+                            title: 'VidFriendz',
+                            featVid: featVid,
+                            logUser: "",
+                            videos: videos,
+                            channels: channels
+                        });
+                    }
+                }
+            }).limit(4);
+        }).catch(err => console.log(err));
+    }).catch(err => console.log(err));
 });
 
 // Routes
 app.use('/users', require('./routes/users'));
 app.use('/videos', require('./routes/videos'));
-app.use('/mobile', require('./routes/mobile'));
+app.use('/posts', require('./routes/posts'));
+app.use('/chat', require('./routes/chat'));
 
-// Sztart Server
+// Start Server
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {

@@ -4,14 +4,8 @@ const bcrypt = require('bcryptjs');
 const passport = require('passport');
 const fs = require('fs');
 const path = require('path');
-const multer = require('multer');
 const { forwardAuthenticated, ensureAuthenticated } = require('../config/auth');
-
-// Load Models
-const User = require('../models/User');
-const Video = require('../models/Video');
-const History = require('../models/History');
-const Note = require('../models/Note');
+const multer = require('multer');
 
 // Multer Config
 var storage = multer.diskStorage({
@@ -28,75 +22,45 @@ const upload = multer({
     limits: { fileSize: 1181116006 }
 });
 
-// Time Ago Function
-function timeAgo(date) {
-    const seconds = Math.floor((new Date() - date) / 1000);
-
-    const interval = Math.floor(seconds / 31536000);
-
-    if (interval > 1) {
-        return interval + " years ago";
+// Calculate Age Function
+function getAge(dateString) {
+    var today = new Date();
+    var birthDate = new Date(dateString);
+    var age = today.getFullYear() - birthDate.getFullYear();
+    var m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
     }
-    if (interval === 1) {
-        return interval + " year ago";
-    }
-
-    const months = Math.floor(seconds / 2628000);
-    if (months > 1) {
-        return months + " months ago";
-    }
-    if (months === 1) {
-        return months + " month ago";
-    }
-
-    const days = Math.floor(seconds / 86400);
-    if (days > 1) {
-        return days + " days ago";
-    }
-    if (days === 1) {
-        return days + " day ago";
-    }
-
-    const hours = Math.floor(seconds / 3600);
-    if (hours > 1) {
-        return hours + " hours ago";
-    }
-    if (hours === 1) {
-        return hours + " hour ago";
-    }
-
-    const minutes = Math.floor(seconds / 60);
-    if (minutes > 1) {
-        return minutes + " minutes ago";
-    }
-    if (minutes === 1) {
-        return minutes + " minute ago";
-    }
-
-    return "just now";
+    return age;
 }
+
+// Load Models
+const User = require('../models/User');
+const Video = require('../models/Video');
+const Note = require('../models/Note');
+const Post = require('../models/Post');
+const Comment = require('../models/Comment');
 
 // Sign Up Page
 router.get('/signup', forwardAuthenticated, (req, res) => {
     res.render('signup', {
         title: 'Sign Up',
-        logUser: "",
-        newNotes: ""
+        logUser: ""
     });
 });
 
 // Sign Up Function
 router.post('/signup', (req, res) => {
-    const { firstname, lastname, username, email, password, password2, gender, country, birthday } = req.body;
+    const { firstname, lastname, username, reg_email, pass, pass2, gender, country, birthday } = req.body;
     let errors = [];
 
-    if (!firstname || !lastname || !username || !email || !password || !password2 || !gender || !country || !birthday) {
+    if (!firstname || !lastname || !username || !reg_email || !pass || !pass2 || !gender || !country || !birthday) {
         errors.push({ msg: 'All Fileds Required' });
     }
-    if (password != password2) {
+    if (pass != pass2) {
         errors.push({ msg: 'Your Password Fields Do Not Match' });
     }
-    if (password.length < 7) {
+    if (pass.length < 7) {
         errors.push({ msg: 'Passwords Should Be 7 Characters Or More' });
     }
     if (username.length < 3 || username.length > 32) {
@@ -104,23 +68,23 @@ router.post('/signup', (req, res) => {
     }
     if (errors.length > 0) {
         res.render('index', {
-            title: 'VidParties',
+            title: 'VidFriendz',
             errors: errors
         });
     } else {
-        User.findOne({ email: email }).then(user => {
+        User.findOne({ email: reg_email }).then(user => {
             if (user) {
                 errors.push({ msg: 'Email Already Exists' });
                 res.render('index', {
-                    title: 'Sign Up',
+                    title: 'VidFriendz',
                     errors: errors
                 });
             } else {
-                User.findOne({ username: username }).then(user => {
-                    if (user) {
+                User.findOne({ username: username }).then(userCheck => {
+                    if (userCheck) {
                         errors.push({ msg: 'Username Already Exists' });
-                        res.render('signup', {
-                            title: 'Sign Up',
+                        res.render('index', {
+                            title: "VidFriendz",
                             errors: errors
                         });
                     } else {
@@ -128,8 +92,8 @@ router.post('/signup', (req, res) => {
                             firstname: firstname,
                             lastname: lastname,
                             username: username,
-                            email: email,
-                            password: password,
+                            email: reg_email,
+                            password: pass,
                             gender: gender,
                             country: country,
                             birthday: birthday
@@ -166,15 +130,6 @@ router.post('/signup', (req, res) => {
     }
 });
 
-// Log In Page
-router.get('/login', forwardAuthenticated, (req, res) => {
-    res.render('login', {
-        title: 'Log In',
-        logUser: "",
-        newNotes: ""
-    });
-});
-
 // Log In Function
 router.post('/login', (req, res, next) => {
     passport.authenticate('local', {
@@ -188,24 +143,38 @@ router.post('/login', (req, res, next) => {
 router.get('/logout', (req, res) => {
     req.logout();
     req.flash('success_msg', 'You are logged out');
-    res.redirect('/users/login');
+    res.redirect('/');
 });
 
-// Search Page
-router.get('/search', (req, res) => {
-    if(req.user) {
-        res.render('search', {
-            title: 'Search',
-            logUser: req.user,
-            newNotes: ""
-        })
-    } else {
-        res.render('search', {
-            title: 'Search',
-            logUser: "",
-            newNotes: ""
+// Dashboard Page
+router.get('/dashboard', ensureAuthenticated, (req, res) => {
+    Note.aggregate([
+        { $match: { receiver: req.user.username } },
+        {
+            $lookup: {
+                from: "users",
+                localField: "initator",
+                foreignField: "username",
+                as: "notes"
+            }
+        },
+        {
+            $unwind: "$notes"
+        }
+    ]).then(notes => {
+        Video.find({ author: req.user.username }, (err, videos) => {
+            if(err) {
+                console.log(err);
+            } else {
+                res.render('dashboard', {
+                    title: 'Dashboard',
+                    logUser: req.user,
+                    notes: notes,
+                    videos: videos
+                });
+            }
         });
-    }
+    }).catch(err => console.log(err));
 });
 
 // Profile Page
@@ -218,209 +187,91 @@ router.get('/:id', ensureAuthenticated, (req, res) => {
                 if(err) {
                     console.log(err);
                 } else {
-                    Note.findOne({ $and: [{ user2: req.user.username }, { did_read: false }] }, (err, newNotes) => {
-                        if(err) {
-                            console.log(err);
-                        } else if(newNotes) {
-                            res.render('profile', {
-                                title: user.firstname + ' ' + user.lastname,
-                                logUser: req.user,
-                                user: user,
-                                videos: videos,
-                                newNotes: 1,
-                            });     
-                        } else {
-                            res.render('profile', {
-                                title: user.firstname + ' ' + user.lastname,
-                                logUser: req.user,
-                                user: user,
-                                videos: videos,
-                                newNotes: 0,
-                            });   
+                    User.aggregate([
+                        {$match: { username: req.params.id }},
+                        {
+                            $lookup: {
+                                from: "users",
+                                localField: "subscribers",
+                                foreignField: "username",
+                                as: "subs"
+                            }
+                        },
+                        {
+                            $unwind: "$subs"
                         }
-                    });
+                    ]).then(subs => {
+                        Post.aggregate([
+                            { $match: { $or: [{ author: req.params.id }, { receiver: req.params.id }] } },
+                            {
+                                $lookup: {
+                                    from: "users",
+                                    localField: "author",
+                                    foreignField: "username",
+                                    as: "posts"
+                                }
+                            },
+                            {
+                                $unwind: "$posts"
+                            }
+                        ]).then(posts => {
+                            Comment.aggregate([
+                                {
+                                    $lookup: {
+                                        from: "users",
+                                        localField: "author",
+                                        foreignField: "username",
+                                        as: "comments"
+                                    }
+                                },
+                                {
+                                    $unwind: "$comments"
+                                }
+                            ]).then(comments => {
+                                const age = getAge(user.birthday);
+                                res.render('profile', {
+                                    title: user.firstname + ' ' + user.lastname,
+                                    logUser: req.user,
+                                    user: user,
+                                    videos: videos,
+                                    age: age,
+                                    subs: subs,
+                                    posts: posts,
+                                    comments: comments     
+                                });
+                            }).catch(err => console.log(err)); 
+                        }).catch(err => console.log(err));
+                    })
                 }
             });
         }
     });
 });
 
-// Notifications page
-router.get('/notes', ensureAuthenticated, (req, res) => {
-    Note.aggregate([
-        { $match: { user2: req.user.username } },
-        {
-            $lookup: {
-                from: "users",
-                localField: "user1",
-                foreignField: "username",
-                as: "notes"
-            }
-        },
-        {
-            $unwind: "$notes"
-        }
-    ]).then(notes => {
-        res.render('notes', {
-            title: "Notifications",
-            logUser: req.user,
-            newNotes: "",
-            notes: notes
-        });
-    }).catch(err => console.log(err));
-});
-
-// Mark Notification As Read
-router.post('/notes/markAsRead/:id', (req, res) => {
-    let updateNotes = {
-        did_read: 1
-    }
-
-    let query = { _id: req.params.id };
-
-    Note.findOneAndUpdate(query, updateNotes, (err) => {
-        if(err) {
-            console.log(err);
-        } else {
-            req.flash(
-                'success_msg',
-                'Note marked as read'
-            );
-            res.redirect(req.get('referer'));
-        }
-    });
-});
-
-// Mark Notification As Unread
-router.post('/notes/markAsUnread/:id', (req, res) => {
-    let updateNotes = {
-        did_read: 0
-    }
-
-    let query = { _id: req.params.id };
-
-    Note.findOneAndUpdate(query, updateNotes, (err) => {
-        if(err) {
-            console.log(err);
-        } else {
-            req.flash(
-                'success_msg',
-                'Note marked as unread'
-            );
-            res.redirect(req.get('referer'));
-        }
-    });
-});
-
-// Delete Note
-router.post('/notes/delete/:id', (req, res) => {
-    Note.findOneAndDelete({ _id: req.params.id }, (err) => {
-        if(err) {
-            console.log(err);
-        } else {
-            req.flash(
-                'success_msg',
-                'Note Deleted'
-            );
-            res.redirect(req.get('referer'));
-        }
-    });
-});
-
 // Subscribe Function
 router.post('/subscribe/:id', (req, res) => {
-    User.findOneAndUpdate({ username: req.user.username }, { $push: { subscriptions: req.params.id } }).exec();
-    User.findOneAndUpdate({ username: req.params.id }, { $push: { subscribers: req.user.username } }).exec();
-    let newNote = new Note({
-        user1: req.user.username,
-        user2: req.params.id,
-        app: 'subs',
-        note: 'subscribed to your channel'
-    });
-
-    newNote
-        .save()
-        .then(note => {
-            req.flash(
-                'success_msg',
-                'Unsubscribed to this channel'
-            );
+    User.findOne({ _id: req.params.id }, (err, user) => {
+        if(err) {
+            console.log(err);
+        } else {
+            User.findOneAndUpdate({ username: req.user.username }, { $push: { subscriptions: user.username } }).exec();
+            User.findOneAndUpdate({ username: user.username }, { $push: { subscribers: req.user.username } }).exec();
             res.redirect(req.get('referer'));
-        })
-        .catch(err => console.log(err));
+        }
+    })
 });
 
 // Unsubscribe Function
 router.post('/unsubscribe/:id', (req, res) => {
-    User.findOneAndUpdate({ username: req.user.username }, { $pull: { subscriptions: req.params.id } }).exec();
-    User.findOneAndUpdate({ username: req.params.id }, { $pull: { subscribers: req.user.username } }).exec();
-    req.flash(
-        'success_msg',
-        'You unsubscribed from this channel'
-    );
-    res.redirect(req.get('referer'));
-});
-
-// Edit Avatar Function
-router.post('/edit/avatar', upload.single('avatar'), (req, res) => {
-    const file = req.file;
-
-    if(!file) {
-        req.flash(
-            'error_msg',
-            'Please select an image file'
-        );
-        res.redirect(req.get('referer'));
-    } else {
-        let updateAvatar = {
-            avatar: file.filename
-        };
-
-        let query = { username: req.user.username }
-
-        User.updateMany(query, updateAvatar, (err) => {
-            if(err) {
-                console.log(err);
-            } else {
-                req.flash(
-                    'success_msg',
-                    'Profile Picture Updated Successfully'
-                );
-                res.redirect(req.get('referer'));
-            }
-        });
-    }
-});
-
-// Edit Cover Photo FUnction
-router.post('/edit/cover', upload.single('cover'), (req, res) => {
-    const file = req.file;
-
-    if(!file) {
-        req.flash(
-            'error_msg',
-            'Please select an image file'
-        );
-        res.redirect(req.get('referer'));
-    } else {
-        let updateCover = {
-            coverPic: file.filename
-        };
-
-        let query = { username: req.user.username }
-
-        User.updateMany(query, updateCover, (err) => {
-            if(err) {
-                console.log(err);
-            } else {
-                req.flash(
-                    'success_msg',
-                    'Cover Picture Updated Successfully'
-                );
-                res.redirect(req.get('referer'));
-            }
-        });
-    }
+    User.findOne({ _id: req.params.id }, (err, user) => {
+        if(err) {
+            console.log(err);
+        } else {
+            User.findOneAndUpdate({ username: req.user.username }, { $pull: { subscriptions: user.username } }).exec();
+            User.findOneAndUpdate({ username: user.username }, { $pull: { subscribers: req.user.username } }).exec();
+            res.redirect(req.get('referer'));
+        }
+    })
 });
 
 // Edit Name Function
@@ -431,7 +282,7 @@ router.post('/edit/name', (req, res) => {
     if(!firstname || !lastname) {
         req.flash(
             'error_msg',
-            'All Feilds Required'
+            'Both Fields Required'
         );
         res.redirect(req.get('referer'));
     } else {
@@ -442,16 +293,95 @@ router.post('/edit/name', (req, res) => {
 
         let query = { username: req.user.username };
 
-        User.updateMany(query, updateName, (err) => {
+        User.findOneAndUpdate(query, updateName, (err) => {
             if(err) {
                 console.log(err);
             } else {
                 req.flash(
                     'success_msg',
-                    'Name Updated Successfully'
+                    'Name Updated'
                 );
                 res.redirect(req.get('referer'));
             }
+        });
+    }
+});
+
+// Edit Email Function
+router.post('/edit/email', (req, res) => {
+    const email = req.body.email;
+
+    User.findOne({ email: email }, (err, emailExist) => {
+        if(err) {
+            console.log(err);
+        } else if(emailExist) {
+            req.flash(
+                'error_msg',
+                'That Email Is Already Connected To Another Account'
+            );
+            res.redirect(req.get('referer'));
+        } else {
+            let updateEmail = {
+                email: email
+            };
+
+            let query = { username: req.user.username };
+
+            User.findOneAndUpdate(query, updateEmail, (err) => {
+                if(err) {
+                    console.log(err);
+                } else {
+                    req.flash(
+                        'success_msg',
+                        'Email Updated'
+                    );
+                    res.redirect(req.get('referer'));
+                }
+            });
+        }
+    });
+});
+
+// Edit Password Function
+router.post('/edit/password', (req, res) => {
+    const pass = req.body.pass;
+    const pass2 = req.body.pass2;
+
+    if(!pass || !pass2) {
+        req.flash(
+            'error_msg',
+            'Both Fields Required'
+        );
+        res.redirect(req.get('referer'));
+    } else if(pass.length < 7) {
+        req.flash(
+            'error_msg',
+            'Passwords Should Be 7 Characters Or More'
+        );
+        res.redirect(req.get('referer'));
+    } else {
+        bcrypt.genSalt(10, (err, salt) => {
+            bcrypt.hash(pass, salt, (err, hash) => {
+                if (err) throw err;
+                pass = hash;
+                let updatePass = {
+                    password: hash
+                };
+
+                let query = { username: req.user.username };
+
+                User.findOneAndUpdate(query, updatePass, (err) => {
+                    if(err) {
+                        console.log(err);
+                    } else {
+                        req.flash(
+                            'success_msg',
+                            'Password Updated'
+                        );
+                        res.redirect(req.get('referer'));
+                    }
+                });
+            });
         });
     }
 });
@@ -462,28 +392,121 @@ router.post('/edit/location', (req, res) => {
     const state = req.body.state;
     const country = req.body.country;
 
-    if(!country) { 
+    if(!country) {
         req.flash(
             'error_msg',
-            'Country field cannot be empty'
+            'Country Can Not Be Empty'
         );
         res.redirect(req.get('referer'));
     } else {
-        let updateLocation = {
+        let updateLoc = {
             city: city,
             state: state,
             country: country
         };
 
-        let query = { username: req.user.username }
+        let query = { username: req.user.username };
 
-        User.updateMany(query, updateLocation, (err) => {
+        User.findOneAndUpdate(query, updateLoc, (err) => {
             if(err) {
                 console.log(err);
             } else {
                 req.flash(
                     'success_msg',
-                    'Location updated successfuly'
+                    'Location Updated'
+                );
+                res.redirect(req.get('referer'));
+            }
+        })
+    }
+});
+
+// Edit Bio Function
+router.post('/edit/bio', (req, res) => {
+    const bio = req.body.bio;
+
+    if(!bio) {
+        req.flash(
+            'error_msg',
+            'Please type something first'
+        );
+        res.redirect(req.get('referer'));
+    } else {
+        let updateBio = {
+            bio: bio
+        };
+
+        let query = { username: req.user.username }
+
+        User.findOneAndUpdate(query, updateBio, (err) => {
+            if(err) {
+                console.log(err);
+            } else {
+                req.flash(
+                    'success_msg',
+                    'Bio updated successfully'
+                );
+                res.redirect(req.get('referer'));
+            }
+        });
+    }
+});
+
+// Edit Cover Picutre Function
+router.post('/edit/coverPic', upload.single('cover'), (req, res) => {
+    const file = req.file;
+
+    if(!file) {
+        req.flash(
+            'error_msg',
+            'Please Select An Image First'
+        );
+        res.redirect(req.get('referer'));
+    } else {
+        let updateCover = {
+            coverPic: req.file.filename
+        };
+
+        let query = { username: req.user.username }
+
+        User.findOneAndUpdate(query, updateCover, (err) => {
+            if(err) {
+                console.log(err);
+            } else {
+                req.flash(
+                    'success_msg',
+                    'Cover photo update success'
+                );
+                res.redirect(req.get('referer'));
+            }
+        });
+    }
+});
+
+// Edit Profile Picture Function
+router.post('/edit/avatar', upload.single('avatar'), (req, res) => {
+    const file = req.file;
+
+    if(!file) {
+        req.flash(
+            'error_msg',
+            'Please Select An Image First'
+        );
+    } else {
+        let updateAvatar = {
+            avatar: req.file.filename
+        };
+
+        let query = { username: req.user.username }
+
+        User.findOneAndUpdate(query, updateAvatar, (err) => {
+            if(err) {
+                console.log(err);
+            } else {
+                
+                req.flash(
+                    'success_msg',
+                    'Profile picutre update success'
                 )
                 res.redirect(req.get('referer'));
             }
@@ -491,35 +514,5 @@ router.post('/edit/location', (req, res) => {
     }
 });
 
-// Edit About Me Function
-router.post('/edit/bio', (req, res) => {
-    const bio = req.body.bio;
-
-    if(!bio) {
-        req.flash(
-            'error_msg',
-            'please Type Somgehting First'
-        );
-        res.redirect(req.get('referer'));
-    } else {
-        let updateBio = {
-            bio: bio
-        }
-
-        let query = { username: req.user.username };
-
-        User.updateMany(query, updateBio, (err) => {
-            if(err) {
-                console.log(err);
-            } else {
-                req.flash(
-                    'success_msg',
-                    'About Me Updated Successfuly'
-                );
-                res.redirect(req.get('referer'));
-            }
-        });
-    }
-});
 
 module.exports = router;
